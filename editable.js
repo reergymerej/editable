@@ -4,7 +4,9 @@
     var me = this;
 
     args = $.extend({
+      onBeforeEdit: notImplemented,
       getEditValue: notImplemented,
+      getEditField: getEditFied,
       onBeforeBlur: notImplemented,
       getNewValue: notImplemented,
       getError: notImplemented,
@@ -25,9 +27,9 @@
 
 
       // only apply to elements without children
-      if (el.children().size() === 0) {
+      if (el.children().size() === 0 && args.onBeforeEdit.apply(el) !== false) {
         editValue = args.getEditValue.apply(el) || el.html();
-        editField = getEditField.call(el, editValue);
+        editField = getContainer.call(el, editValue);
         el.after(editField).hide();
         editField.find('input').select();
       }
@@ -52,8 +54,8 @@
         el.focus().select();
       } else {
 
-        newValue = args.getNewValue(val) || val;
         editableField = el.parent().prev('.editable');
+        newValue = args.getNewValue.call(editableField, val) || val;
         oldValue = editableField.html();
         editableField.html(newValue).show();
         el.off('blur', onBlurHandler).off('blur', onKeyDownHandler).parent().remove();
@@ -69,7 +71,14 @@
       }
     };
 
-    function getEditField(value) {
+    function getEditFied(value) {
+      return $('<input />', {
+        value: value,
+        placeholder: value
+      });
+    }
+
+    function getContainer(value) {
       var container,
         input,
         error;
@@ -80,10 +89,8 @@
         position: 'relative'
       });
 
-      input = $('<input />', {
-        value: value,
-        placeholder: value
-      }).on('blur', onBlurHandler).on('keydown', onKeyDownHandler);
+      input = args.getEditField.call(this, value);
+      input.on('blur', onBlurHandler).on('keydown', onKeyDownHandler);
 
       error = $('<span />', {
         'class': 'error'
